@@ -1,0 +1,18 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+mlflow = "==2.12.1"
+scikit-learn = "==1.4.2"
+pandas = "==2.2.2"
+numpy = "==1.26.4"
+hyperopt = "==0.2.7"
+pyarrow = "==15.0.2"
+apache-airflow-providers-fab = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.13"

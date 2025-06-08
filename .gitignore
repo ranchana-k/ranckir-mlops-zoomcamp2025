@@ -7,4 +7,4 @@ __pycache__/
 *.so
 
 # Environment & package management
-.env
+03-Orchestration/airflow_db/logs/
