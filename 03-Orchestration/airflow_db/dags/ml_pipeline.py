@@ -8,53 +8,57 @@ import mlflow
 import mlflow.sklearn
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
+from ml_pipeline.homework import run_data_prep, train_model, register_model_to_mlflow
 
 # MLflow setup
-mlflow.set_tracking_uri("sqlite:////opt/airflow/models/mlflow.db")
-mlflow.set_experiment("taxi-model")
+mlflow.set_tracking_uri("้http://mlflow:5000")
+mlflow.set_experiment("nyc-taxi-model")
 
-URL = "https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2023-03.parquet"
-LOCAL_PARQUET = "/opt/airflow/models/yellow_tripdata_2023-03.parquet"
-LOCAL_GZIP = "/opt/airflow/models/yellow_tripdata_2023-03.parquet.gzip"
 
-def download_parquet():
-    r = requests.get(URL)
-    with open(LOCAL_PARQUET, "wb") as f:
-        f.write(r.content)
-    print("✅ Downloaded Parquet")
-
-def compress_parquet():
-    df = pd.read_parquet(LOCAL_PARQUET, engine="pyarrow")
-    df.to_parquet(LOCAL_GZIP, compression="gzip")
-    print("📦 Compressed to GZIP")
-
-def train_model():
-    df = pd.read_parquet(LOCAL_GZIP)
-    df = df.dropna(subset=["trip_distance", "fare_amount"])
-    X = df[["trip_distance"]]
-    y = df["fare_amount"]
-
-    model = LinearRegression()
-    model.fit(X, y)
-    preds = model.predict(X)
-    rmse = mean_squared_error(y, preds, squared=False)
-
-    with mlflow.start_run():
-        mlflow.log_param("model_type", "LinearRegression")
-        mlflow.log_metric("rmse", rmse)
-        mlflow.sklearn.log_model(model, "model")
-
-    print(f"✅ Trained and logged model. RMSE: {rmse:.3f}")
+# DAG default arguments
+default_args = {
+    "owner": "airflow",
+    "start_date": datetime(2024, 1, 1),
+    "retries": 1,
+}
 
 with DAG(
-    dag_id="taxi_pipeline_local",
-    start_date=datetime(2024, 1, 1),
-    schedule="@once",
-    catchup=False
+    dag_id="full_ml_pipeline",
+    description="Read, preprocess, train and register model via MLflow",
+    default_args=default_args,
+    schedule_interval="@daily",
+    catchup=False,
+    tags=["mlflow", "mlops", "full_pipeline"],
 ) as dag:
 
-    t1 = PythonOperator(task_id="download", python_callable=download_parquet)
-    t2 = PythonOperator(task_id="compress", python_callable=compress_parquet)
-    t3 = PythonOperator(task_id="train_and_log", python_callable=train_model)
+    RAW_PATH = "/opt/airflow/data"
+    DATA_OUTPUT_PATH = "/opt/airflow/data_pickled"
+    MODEL_NAME = "linear_regression"
 
-    t1 >> t2 >> t3
+
+    prep_data = PythonOperator(
+        task_id="prep_data",
+        python_callable=run_data_prep,
+        op_kwargs={
+            "raw_data_path": RAW_PATH,
+            "dest_path": DATA_OUTPUT_PATH,
+            "dataset": "yellow"
+        }
+    )
+
+    train = PythonOperator(
+        task_id="train_model",
+        python_callable=train_model,
+        op_kwargs={"data_path": DATA_OUTPUT_PATH},
+    )
+
+    register_model = PythonOperator(
+        task_id="register_model",
+        python_callable=register_model_to_mlflow,
+        op_kwargs={
+            "run_id": "{{ ti.xcom_pull(task_ids='train_model') }}",
+            "model_name": MODEL_NAME
+        }
+    )
+
+    prep_data >> train >> register_model
