@@ -1,0 +1,6 @@
+artifact_location: /opt/airflow/้http:/mlflow:5000/667560029496512403
+creation_time: 1749575093368
+experiment_id: '667560029496512403'
+last_update_time: 1749575093368
+lifecycle_stage: active
+name: nyc-taxi-model
