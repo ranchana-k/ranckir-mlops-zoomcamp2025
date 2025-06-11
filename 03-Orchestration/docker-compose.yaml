@@ -96,6 +96,12 @@ services:
     <<: *airflow-common
     command: celery worker
     container_name: airflow-worker
+    deploy: # <--- ADD THIS BLOCK
+      resources:
+        limits:
+          memory: 8G # <--- Start with 4GB. You might need 6G, 8G, or even more depending on your data size.
+        reservations: # Recommended to reserve some memory to ensure it's available
+          memory: 4G
     healthcheck:
       test:
         - "CMD-SHELL"

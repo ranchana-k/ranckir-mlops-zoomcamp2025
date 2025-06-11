@@ -6,6 +6,9 @@ __pycache__/
 *.py[cod]
 *.so
 .env
+
+# Large files
+*.pkl
 # Environment & package management
 03-Orchestration/airflow_db/logs/
 03-Orchestration/airflow_db/airflow.db

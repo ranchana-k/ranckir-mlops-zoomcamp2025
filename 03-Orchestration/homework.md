@@ -6,3 +6,5 @@ After running and testing on local using `03_Homework.ipynb`, I have converted i
 
 ![MLFlow Result](./screenshots/02_mlflow_result.png)
 
+![Model Size](./screenshots/03_model_size.png)
+
