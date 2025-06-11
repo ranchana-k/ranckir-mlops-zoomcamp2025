@@ -76,7 +76,7 @@ def run_data_prep(raw_data_path: str, dest_path: str, dataset: str = "green"):
         df_val = read_dataframe(
             os.path.join(raw_data_path, f"{dataset}_tripdata_2023-04.parquet")
         )
-        print(f"df_val records: {len(df_)}")
+        print(f"df_val records: {len(df_val)}")
     except Exception as e:
         logging.ERROR(f"An error occured: {e}")
     # df_test = read_dataframe(
@@ -128,14 +128,13 @@ def train_model(data_path):
         mlflow.log_param("intercept_", lr.intercept_)
         y_pred = lr.predict(X_val)
         # ตัวอย่างข้อมูลที่ใช้ infer
-        input_example = X_train[:5]
-        signature = infer_signature(X_train[:5], lr.predict(X_train[:5]))
+        # input_example = X_train[:5]
+        # signature = infer_signature(X_train[:5], lr.predict(X_train[:5]))
 
         rmse = root_mean_squared_error(y_val, y_pred)
         mlflow.log_metric("rmse", rmse)
         mlflow.sklearn.log_model(sk_model=lr, artifact_path="artifacts",
-                                 input_example=input_example,
-                                 signature=signature)
+                                 )
         run_id = run.info.run_id
         
         
